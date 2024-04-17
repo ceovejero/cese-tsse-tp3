@@ -31,43 +31,27 @@ SPDX-License-Identifier: MIT
 #include "debounce.h"
 #include "mock_hal.h"
 #include "mock_delay.h"
+//#include "stdbool.h"
 
 /* === Macros definitions =========================================== */
 
+#define DEBOUNCE_PERIOD 40
+
 /* === Private data type declarations ==================================== */
 
-// typedef enum {
-//     BUTTON_USER = 0,
-//     /* Alias */
-//     BUTTON_KEY = BUTTON_USER
-// } Button_TypeDef;
+ typedef enum {
+     BUTTON_UP,
+     BUTTON_FALLING,
+     BUTTON_DOWN,
+     BUTTON_RAISING,
+ } debounceState_t;
 
-// typedef enum {
-//     BUTTON_MODE_GPIO = 0,
-//     /* Alias */
-//     BUTTON_MODE_EXTI = 1
-// } ButtonMode_TypeDef;
-
-// typedef enum {
-//     BUTTON_UP,
-//     BUTTON_FALLING,
-//     BUTTON_DOWN,
-//     BUTTON_RAISING,
-// } debounceState_t;
-
-typedef enum {
-    BUTTON_RELEASED = 0,
-    /* Alias */
-    BUTTON_PRESSED = 1
-} buttonState_t;
 
 /* === Private variable declarations ====================================== */
 
-// delay_t delayDebounceFSM; // Estructura para control de tiempos
-// debounceState_t actualState;
-// bool_t pressed;
-buttonState_t buttonState;
-buttonState_t * p_buttonState = &buttonState;
+extern delay_t delayDebounceFSM;
+extern debounceState_t actualState;
+extern bool_t pressed;
 
 /* === Private function declarations ====================================== */
 
@@ -78,45 +62,159 @@ buttonState_t * p_buttonState = &buttonState;
 /* === Private function implementation ====================================== */
 
 /// @brief Test 1
-/// Al inicializar la FSM del mock de Botones actualState debe ser BUTTON_UP
-/// .
-void test_inicializar_Button_en_UP(void) {
-
-    // BSP_PB_Init(0, 0);
-    // BSP_PB_Init_Ignore(BUTTON_USER, BUTTON_MODE_GPIO);
-    //   TEST_ASSERT_EQUAL_INT(BUTTON_RELEASED, *p_buttonState);
-    TEST_FAIL_MESSAGE("Falla en la prueba de inicialización de la FSM de Botones.");
-}
-
-/// @brief Test 2
 /// Al inicializar la maquina de estados actualState debe ser BUTTON_UP
 /// .
 void test_inicializacion_del_antirrebote(void) {
-    // debounceFSM_init();
-    // TEST_ASSERT_EQUAL_INT(BUTTON_UP, actualState);
-    TEST_IGNORE_MESSAGE("TBD Test 2");
+    
+    BSP_PB_Init_Expect(BUTTON_USER, BUTTON_MODE_GPIO);
+    delayInit_Expect(&delayDebounceFSM, DEBOUNCE_PERIOD);
+        
+    debounceFSM_init();
+    // Se inicializa la FSM - variable actualState = BUTTON_UP
+    TEST_ASSERT_EQUAL_INT(BUTTON_UP, actualState);
+
 }
 
-/// @brief Test 3
+/// @brief Test 2
 /// Al presionar el boton, el estado actual debe cambiar a BUTTON_FALLING
 /// .
 void test_estado_BUTTON_FALLING_del_antirrebote(void) {
 
-    TEST_IGNORE_MESSAGE("TBD Test 3");
+    BSP_PB_Init_Expect(BUTTON_USER, BUTTON_MODE_GPIO);
+    delayInit_Expect(&delayDebounceFSM, DEBOUNCE_PERIOD);
+
+    debounceFSM_init();
+    // Se inicializa la FSM - variable actualState = BUTTON_UP
+        
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_FALLING
+
+    TEST_ASSERT_EQUAL_INT(BUTTON_FALLING, actualState);
 }
 
-/// @brief Test 4
+/// @brief Test 3
 /// Al seguir presionado el boton, el estado actual debe cambiar a BUTTON_DOWN
 /// .
 void test_estado_BUTTON_DOWN_del_antirrebote(void) {
 
-    TEST_IGNORE_MESSAGE("TBD Test 4");
+    BSP_PB_Init_Expect(BUTTON_USER, BUTTON_MODE_GPIO);
+    delayInit_Expect(&delayDebounceFSM, DEBOUNCE_PERIOD);
+
+    debounceFSM_init();
+    // Se inicializa la FSM - variable actualState = BUTTON_UP
+        
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_FALLING
+
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_DOWN
+
+    TEST_ASSERT_EQUAL_INT(BUTTON_DOWN, actualState);
 }
 
-/// @brief Test 5
+/// @brief Test 4
 /// Al liberar el boton, el estado actual debe cambiar a BUTTON_RAISING
 /// .
 void test_estado_BUTTON_RAISING_del_antirrebote(void) {
 
-    TEST_IGNORE_MESSAGE("TBD Test 5");
+    BSP_PB_Init_Expect(BUTTON_USER, BUTTON_MODE_GPIO);
+    delayInit_Expect(&delayDebounceFSM, DEBOUNCE_PERIOD);
+
+    debounceFSM_init();
+    // Se inicializa la FSM - variable actualState = BUTTON_UP
+        
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_FALLING
+
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_DOWN
+
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, false);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, false);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_RAISING
+
+    TEST_ASSERT_EQUAL_INT(BUTTON_RAISING, actualState);
+
 }
+
+/// @brief Test 5
+/// Al liberar el boton, el estado actual debe cambiar a BUTTON_UP
+/// .
+void test_estado_BUTTON_UP_luego_de_RAISING (void) {
+
+    BSP_PB_Init_Expect(BUTTON_USER, BUTTON_MODE_GPIO);
+    delayInit_Expect(&delayDebounceFSM, DEBOUNCE_PERIOD);
+
+    debounceFSM_init();
+    // Se inicializa la FSM - variable actualState = BUTTON_UP
+        
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_FALLING
+
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_DOWN
+
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, false);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, false);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_RAISING
+
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, false);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_UP
+
+    TEST_ASSERT_EQUAL_INT(BUTTON_UP, actualState);
+}
+
+/// @brief Test 6
+/// Al presionar el boton, el estado actual debe cambiar a BUTTON_FALLING
+/// .
+void test_Button_Pressed_del_antirrebote(void) {
+
+    BSP_PB_Init_Expect(BUTTON_USER, BUTTON_MODE_GPIO);
+    delayInit_Expect(&delayDebounceFSM, DEBOUNCE_PERIOD);
+
+    debounceFSM_init();
+    // Se inicializa la FSM - variable actualState = BUTTON_UP
+        
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_FALLING
+
+    delayRead_ExpectAndReturn(&delayDebounceFSM, true);
+    BSP_PB_GetState_ExpectAndReturn(BUTTON_USER, true);
+
+    debounceFSM_update();
+    // Se actualiza la FSM - variable actualState = BUTTON_DOWN
+
+    TEST_ASSERT_EQUAL_INT(1, pressed);
+}
+

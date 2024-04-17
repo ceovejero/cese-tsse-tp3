@@ -18,9 +18,9 @@ typedef enum {
     BUTTON_RAISING,
 } debounceState_t;
 
-static delay_t delayDebounceFSM;    // Estructura para control de tiempos
-static debounceState_t actualState; // Variable de estado (global) interna de Maquina de Estados
-static bool_t pressed;
+bool_t pressed;
+delay_t delayDebounceFSM;    // Estructura para control de tiempos
+debounceState_t actualState; // Variable de estado (global) interna de Maquina de Estados
 
 /**
  * @brief  Inicializa la Maquina de Estado - debounce
@@ -38,13 +38,14 @@ void debounceFSM_init() {
  * @param  None
  * @retval None
  */
-void debounceFSM_update() {
+int debounceFSM_update() {
     switch (actualState) {
     case BUTTON_UP:
         if (BSP_PB_GetState(BUTTON_USER)) {
             actualState = BUTTON_FALLING; // estado siguiente
             delayRead(&delayDebounceFSM); // inicia la cuenta de antirrebote
         }
+        return(actualState);
         break;
     case BUTTON_FALLING:
         if (delayRead(&delayDebounceFSM)) // control de tiempo de antirrebote
@@ -57,13 +58,14 @@ void debounceFSM_update() {
                 actualState = BUTTON_UP; // regreso al estado previo
             }
         }
+        return(actualState);
         break;
     case BUTTON_DOWN:
-        if (!BSP_PB_GetState(
-                BUTTON_USER)) { // si el pulsador se libera se regresa al estado anterior
+        if (!BSP_PB_GetState(BUTTON_USER)) { // si el pulsador se libera se regresa al estado anterior
             actualState = BUTTON_RAISING;
             delayRead(&delayDebounceFSM);
         }
+        return(actualState);
         break;
     case BUTTON_RAISING:
         if (delayRead(&delayDebounceFSM)) // control de tiempo de antirrebote
@@ -77,10 +79,11 @@ void debounceFSM_update() {
                 actualState = BUTTON_DOWN; // regreso al estado previo
             }
         }
+        return(actualState);
         break;
     default:
         // si se carga algun valor no contemplado, se regresa al estado inicial
-        actualState = BUTTON_UP;
+        actualState = 99;//BUTTON_UP;
         break;
     }
 }

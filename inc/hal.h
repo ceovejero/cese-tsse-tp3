@@ -17,4 +17,4 @@ typedef enum {
 
 void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef ButtonMode);
 
-uint32_t BSP_PB_GetState(Button_TypeDef Button);
+bool BSP_PB_GetState(Button_TypeDef Button);
